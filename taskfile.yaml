@@ -1,0 +1,41 @@
+# Every project command lives here. Run `task` to list them.
+version: "3"
+
+vars:
+  CLUSTER: gridcast-dev
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  tools:
+    desc: Check that every required tool is installed
+    cmds:
+      - ./scripts/check-tools.sh
+
+  dev-up:
+    desc: Create the local k3d cluster
+    cmds:
+      - k3d cluster create --config k3d/dev.yaml
+      - kubectl wait --for=condition=Ready nodes --all --timeout=120s
+    status:
+      # Skip creation if the cluster already exists.
+      - k3d cluster get {{.CLUSTER}}
+
+  dev-down:
+    desc: Delete the local k3d cluster
+    cmds:
+      - k3d cluster delete {{.CLUSTER}}
+
+  dev-status:
+    desc: Show nodes and pods of the local cluster
+    cmds:
+      - kubectl get nodes -o wide
+      - kubectl get pods -A
+
+  lint:
+    desc: Run all pre-commit hooks on every file
+    cmds:
+      - pre-commit run --all-files
