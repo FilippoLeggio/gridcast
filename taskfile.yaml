@@ -1,6 +1,7 @@
 # Every project command lives here. Run `task` to list them.
 ---
 version: "3"
+dotenv: [".env"]
 
 vars:
   CLUSTER: gridcast-dev
@@ -63,3 +64,9 @@ tasks:
     desc: Follow the logs of local dependencies
     cmds:
       - docker compose logs -f
+
+  db-migrate:
+    desc: Apply database migrations
+    dir: app
+    cmds:
+      - uv run alembic upgrade head
