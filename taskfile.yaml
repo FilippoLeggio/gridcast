@@ -1,4 +1,5 @@
 # Every project command lives here. Run `task` to list them.
+---
 version: "3"
 
 vars:
@@ -39,3 +40,26 @@ tasks:
     desc: Run all pre-commit hooks on every file
     cmds:
       - pre-commit run --all-files
+
+  deps-up:
+    desc: Start local dependencies (Postgres, SeaweedFS, MLflow)
+    preconditions:
+      - sh: test -f .env
+        msg: "Missing .env: copy .env.example to .env first"
+    cmds:
+      - docker compose up -d --build
+
+  deps-down:
+    desc: Stop local dependencies, keeping their data
+    cmds:
+      - docker compose down
+
+  deps-reset:
+    desc: Stop local dependencies and delete their data
+    cmds:
+      - docker compose down -v
+
+  deps-logs:
+    desc: Follow the logs of local dependencies
+    cmds:
+      - docker compose logs -f

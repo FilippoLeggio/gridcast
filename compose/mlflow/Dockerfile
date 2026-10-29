@@ -1,0 +1,3 @@
+# MLflow tracking server with the drivers it needs for Postgres and S3.
+FROM ghcr.io/mlflow/mlflow:v3.1.0
+RUN pip install --no-cache-dir psycopg2-binary boto3
