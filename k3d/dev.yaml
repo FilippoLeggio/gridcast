@@ -1,0 +1,31 @@
+# Local development cluster for GridCast.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: gridcast-dev
+servers: 1
+agents: 1
+ports:
+  # Expose HTTP and HTTPS through the k3d load balancer.
+  - port: 80:80
+    nodeFilters:
+      - loadbalancer
+  - port: 443:443
+    nodeFilters:
+      - loadbalancer
+registries:
+  # Local image registry, reachable from the cluster without pushing to GHCR.
+  create:
+    name: gridcast-registry.localhost
+    host: "0.0.0.0"
+    hostPort: "5050"
+options:
+  k3s:
+    extraArgs:
+      # Argo CD will install Traefik, so the bundled one is disabled.
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
