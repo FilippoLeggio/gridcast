@@ -7,7 +7,7 @@ __pycache__/
 .mypy_cache/
 *.egg-info/
 
-# Segreti e configurazioni locali: mai in Git
+# Secrets:
 .env
 .env.*
 !.env.example
@@ -16,7 +16,7 @@ __pycache__/
 kubeconfig*
 *.kubeconfig
 
-# Terraform: lo state contiene dati sensibili e va nel backend remoto
+# Terraform:
 .terraform/
 *.tfstate
 *.tfstate.*
@@ -25,10 +25,10 @@ crash.log
 !*.tfvars.example
 .terraform.tfstate.lock.info
 
-# Ansible
+# Ansible:
 *.retry
 
-# Editor e sistema
+# Editor and system:
 .vscode/*
 !.vscode/extensions.json
 .DS_Store

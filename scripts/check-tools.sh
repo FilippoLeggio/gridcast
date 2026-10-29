@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Stampa la versione di ogni strumento richiesto da GridCast.
-# Exit code 0 se c'è tutto, 1 se manca qualcosa.
+# Prints the version of each tool required by GridCast.
+# Exit code 0 if all tools are present, 1 if any are missing.
 set -uo pipefail
 
 tools=(
@@ -36,15 +36,15 @@ for entry in "${tools[@]}"; do
   if out=$(eval "$cmd" 2>/dev/null | head -n1) && [[ -n "$out" ]]; then
     printf "%-12s %s\n" "$name" "$out"
   else
-    printf "%-12s MANCANTE\n" "$name"
+    printf "%-12s MISSING\n" "$name"
     missing=$((missing + 1))
   fi
 done
 
 echo
 if [[ $missing -eq 0 ]]; then
-  echo "Tutti gli strumenti sono installati."
+  echo "All tools are installed."
 else
-  echo "Strumenti mancanti: $missing"
+  echo "Missing tools: $missing"
 fi
 [[ $missing -eq 0 ]]
