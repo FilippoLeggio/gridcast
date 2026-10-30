@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert
 
-from gridcast.common.tables import energy_power, ingest_runs
+from gridcast.common.tables import energy_power, ingest_runs, weather_hourly
 
 # Postgres accepts at most 65535 bind parameters per statement:
 # 5000 rows x 4 columns stays well below.
@@ -18,20 +18,41 @@ def create_db_engine(url: str) -> sa.Engine:
     return sa.create_engine(url, pool_pre_ping=True)
 
 
-def upsert_power(conn: sa.Connection, rows: Sequence[dict]) -> int:
-    """Insert new points and update values revised upstream. Returns rows actually written."""
+def _upsert(
+    conn: sa.Connection,
+    table: sa.Table,
+    rows: Sequence[dict],
+    keys: list[str],
+    values: list[str],
+) -> int:
+    """Insert new rows and update those whose values changed upstream. Returns rows written."""
     written = 0
     for i in range(0, len(rows), BATCH_SIZE):
-        stmt = insert(energy_power).values(rows[i : i + BATCH_SIZE])
+        stmt = insert(table).values(rows[i : i + BATCH_SIZE])
+        # Update only if at least one value changed: unchanged rows are not rewritten.
+        changed = sa.or_(*(table.c[col].is_distinct_from(stmt.excluded[col]) for col in values))
         stmt = stmt.on_conflict_do_update(
-            index_elements=["country", "series", "ts"],
-            set_={"value_mw": stmt.excluded.value_mw, "ingested_at": sa.func.now()},
-            # Skip rows whose value did not change: unchanged data is not rewritten.
-            where=energy_power.c.value_mw.is_distinct_from(stmt.excluded.value_mw),
-        ).returning(energy_power.c.ts)
+            index_elements=keys,
+            set_={**{col: stmt.excluded[col] for col in values}, "ingested_at": sa.func.now()},
+            where=changed,
+        ).returning(table.c.ts)
         # RETURNING lists only the rows actually inserted or updated.
-        written += conn.execute(stmt).rowcount
+        written += len(conn.execute(stmt).all())
     return written
+
+
+def upsert_power(conn: sa.Connection, rows: Sequence[dict]) -> int:
+    return _upsert(conn, energy_power, rows, keys=["country", "series", "ts"], values=["value_mw"])
+
+
+def upsert_weather(conn: sa.Connection, rows: Sequence[dict]) -> int:
+    return _upsert(
+        conn,
+        weather_hourly,
+        rows,
+        keys=["location", "ts"],
+        values=["temperature_c", "shortwave_radiation_wm2"],
+    )
 
 
 @contextmanager

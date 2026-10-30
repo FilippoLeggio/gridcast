@@ -78,8 +78,27 @@ tasks:
     cmds:
       - uv run gridcast-ingest energy {{.CLI_ARGS}}
 
+  ingest-weather:
+    desc: "Fetch recent and upcoming Open-Meteo weather data
+      (extra args after --)"
+    dir: app
+    cmds:
+      - uv run gridcast-ingest weather {{.CLI_ARGS}}
+
   test:
     desc: Run the Python test suite
     dir: app
     cmds:
       - uv run pytest
+
+  backfill-energy:
+    desc: "Load Energy-Charts history"
+    dir: app
+    cmds:
+      - uv run gridcast-ingest backfill-energy {{.CLI_ARGS}}
+
+  backfill-weather:
+    desc: "Load Open-Meteo archive history"
+    dir: app
+    cmds:
+      - uv run gridcast-ingest backfill-weather {{.CLI_ARGS}}
