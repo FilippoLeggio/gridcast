@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 
 import httpx
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
+
+from gridcast.common.http import api_retry
 
 # Derived percentages: not stored, they can be computed from the power series.
 EXCLUDED_SERIES = {"Renewable share of load", "Renewable share of generation"}
@@ -38,22 +39,7 @@ def parse_public_power(payload: dict, country: str) -> list[PowerPoint]:
     return points
 
 
-def _is_retryable(error: BaseException) -> bool:
-    """Retry network failures, rate limiting and server errors; never client errors."""
-    if isinstance(error, httpx.TransportError):
-        return True
-    if isinstance(error, httpx.HTTPStatusError):
-        status = error.response.status_code
-        return status == 429 or status >= 500
-    return False
-
-
-@retry(
-    retry=retry_if_exception(_is_retryable),
-    wait=wait_exponential(multiplier=2, min=2, max=60),
-    stop=stop_after_attempt(5),
-    reraise=True,
-)
+@api_retry
 def fetch_public_power(
     client: httpx.Client, country: str, start: date, end: date
 ) -> list[PowerPoint]:
