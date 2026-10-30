@@ -15,10 +15,11 @@ dependencies = [
     "sqlalchemy>=2",
     "tenacity>=9.2.1",
     "typer>=0.27.3",
+    "tzdata>=2026.6",
 ]
 
 [project.scripts]
-gridcast = "gridcast:main"
+gridcast-ingest = "gridcast.ingest.cli:app"
 
 [build-system]
 requires = ["uv_build>=0.13.6,<0.14.0"]
@@ -35,3 +36,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.flake8-bugbear]
+# Typer reads these calls only to build the CLI: they are safe as defaults.
+extend-immutable-calls = ["typer.Option", "typer.Argument"]

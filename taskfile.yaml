@@ -70,3 +70,16 @@ tasks:
     dir: app
     cmds:
       - uv run alembic upgrade head
+
+  ingest-energy:
+    desc: "Fetch recent Energy-Charts data
+     (extra args: task ingest-energy -- --days 7)"
+    dir: app
+    cmds:
+      - uv run gridcast-ingest energy {{.CLI_ARGS}}
+
+  test:
+    desc: Run the Python test suite
+    dir: app
+    cmds:
+      - uv run pytest
