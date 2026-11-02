@@ -102,3 +102,10 @@ tasks:
     dir: app
     cmds:
       - uv run gridcast-ingest backfill-weather {{.CLI_ARGS}}
+
+  train-inspect:
+    desc: "Summarize the modelling dataset
+      (task train-inspect -- --start 2024-01-01 --end 2026-11-01)"
+    dir: app
+    cmds:
+      - uv run gridcast-train inspect {{.CLI_ARGS}}
