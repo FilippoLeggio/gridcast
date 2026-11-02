@@ -8,7 +8,10 @@ import typer
 from gridcast.common.config import Settings
 from gridcast.common.db import create_db_engine
 from gridcast.trainer.dataset import load_dataset
+from gridcast.trainer.train import train_and_register
 
+# Start of the ingested history.
+DEFAULT_START = datetime(2024, 1, 1)
 app = typer.Typer(help="GridCast model training.", no_args_is_help=True)
 
 DateOption = Annotated[datetime, typer.Option(formats=["%Y-%m-%d"])]
@@ -33,3 +36,22 @@ def inspect(
     typer.echo(data.isna().sum().to_string())
     typer.echo("\nValue ranges:")
     typer.echo(data.describe().T[["mean", "min", "max"]].round(1).to_string())
+
+
+@app.command()
+def train(
+    start: Annotated[
+        datetime, typer.Option(formats=["%Y-%m-%d"], help="First day of history (UTC).")
+    ] = DEFAULT_START,
+    folds: Annotated[int, typer.Option(help="Monthly walk-forward folds.")] = 6,
+) -> None:
+    """Validate with walk-forward, train on all history and register the model in MLflow."""
+    engine = create_db_engine(Settings().database_url)
+    data = load_dataset(engine, start.replace(tzinfo=UTC), datetime.now(UTC))
+    result = train_and_register(data, engine.url.render_as_string(hide_password=True), folds)
+
+    typer.echo(result["folds"].round(2).to_string(index=False))
+    typer.echo(
+        f"\nCV MAPE {result['cv_mape']:.2f}% vs baseline {result['baseline_mape']:.2f}%"
+        f" | model version {result['version']} | promoted: {result['promoted']}"
+    )

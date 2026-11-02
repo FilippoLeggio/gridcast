@@ -105,7 +105,13 @@ tasks:
 
   train-inspect:
     desc: "Summarize the modelling dataset
-      (task train-inspect -- --start 2024-01-01 --end 2026-11-01)"
+      (task train-inspect -- --start 2024-01-01 --end 2026-11-04)"
     dir: app
     cmds:
       - uv run gridcast-train inspect {{.CLI_ARGS}}
+
+  train:
+    desc: "Walk-forward validation, training and registration in MLflow (args after --)"
+    dir: app
+    cmds:
+      - uv run gridcast-train train {{.CLI_ARGS}}
