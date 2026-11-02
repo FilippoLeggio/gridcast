@@ -115,3 +115,9 @@ tasks:
     dir: app
     cmds:
       - uv run gridcast-train train {{.CLI_ARGS}}
+
+  predict:
+    desc: "Forecast tomorrow's hourly load with the champion model (args after --)"
+    dir: app
+    cmds:
+      - uv run gridcast-train predict {{.CLI_ARGS}}
