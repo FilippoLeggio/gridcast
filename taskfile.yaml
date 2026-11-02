@@ -89,7 +89,7 @@ tasks:
     desc: Run the Python test suite
     dir: app
     cmds:
-      - uv run pytest
+      - uv run --all-extras pytest
 
   backfill-energy:
     desc: "Load Energy-Charts history"
@@ -121,3 +121,9 @@ tasks:
     dir: app
     cmds:
       - uv run gridcast-train predict {{.CLI_ARGS}}
+
+  api:
+    desc: Run the API locally with auto-reload on http://localhost:8000
+    dir: app
+    cmds:
+      - uv run --extra api uvicorn gridcast.api.main:app --reload --port 8000

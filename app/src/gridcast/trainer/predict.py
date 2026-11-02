@@ -1,7 +1,6 @@
 """Batch prediction: forecast tomorrow's hourly load with the champion model."""
 
-from datetime import UTC, date, datetime, time, timedelta
-from zoneinfo import ZoneInfo
+from datetime import UTC, date, datetime
 
 import mlflow
 import pandas as pd
@@ -10,20 +9,9 @@ from mlflow.tracking import MlflowClient
 
 from gridcast.common.db import upsert_forecasts
 from gridcast.common.features import FEATURE_COLUMNS
+from gridcast.common.timeutil import LOCAL_TZ, target_day_bounds
 from gridcast.trainer.dataset import load_dataset
 from gridcast.trainer.train import BASELINE, CHAMPION_ALIAS, MODEL_NAME
-
-LOCAL_TZ = ZoneInfo("Europe/Rome")
-
-
-def target_day_bounds(day: date) -> tuple[datetime, datetime]:
-    """UTC instants of local midnight at the start and at the end of an Italian day.
-
-    The hours in between are 23, 24 or 25, depending on daylight saving changes.
-    """
-    start_local = datetime.combine(day, time.min, tzinfo=LOCAL_TZ)
-    end_local = datetime.combine(day + timedelta(days=1), time.min, tzinfo=LOCAL_TZ)
-    return start_local.astimezone(UTC), end_local.astimezone(UTC)
 
 
 def predict_day(engine: sa.Engine, day: date) -> dict:

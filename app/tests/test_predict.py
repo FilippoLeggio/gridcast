@@ -2,7 +2,7 @@ from datetime import UTC, date, datetime
 
 import pandas as pd
 
-from gridcast.trainer.predict import target_day_bounds
+from gridcast.common.timeutil import target_day_bounds
 
 
 def _hours(day: date) -> int:
@@ -22,6 +22,6 @@ def test_fall_back_day_has_25_hours() -> None:
     assert _hours(date(2026, 10, 25)) == 25
 
 
-def test_day_starts_at_italian_midnight() -> None:
+def test_timeutil() -> None:
     start, _ = target_day_bounds(date(2026, 11, 3))
     assert start == datetime(2026, 11, 2, 23, 0, tzinfo=UTC)
