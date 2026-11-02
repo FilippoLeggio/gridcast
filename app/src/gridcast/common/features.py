@@ -95,7 +95,11 @@ def build_features(load: pd.Series, weather: pd.DataFrame) -> pd.DataFrame:
     features["load_mw"] = load.reindex(index)
 
     features["temperature_c"] = weather["temperature_c"]
-    features["shortwave_radiation_wm2"] = weather["shortwave_radiation_wm2"]
+    # Open-Meteo labels radiation at the end of the hour it averages:
+    # realign it to the start of the hour, like load.
+    features["shortwave_radiation_wm2"] = (
+        weather["shortwave_radiation_wm2"].shift(-1, freq="h").reindex(index)
+    )
     features["heating_degrees"] = (HEATING_BASE_C - weather["temperature_c"]).clip(lower=0)
     features["cooling_degrees"] = (weather["temperature_c"] - COOLING_BASE_C).clip(lower=0)
 
