@@ -9,7 +9,10 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.1",
+    "holidays>=0.107",
     "httpx>=0.28.1",
+    "numpy>=2.5.4",
+    "pandas>=3.1.0",
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.16.2",
     "sqlalchemy>=2",
