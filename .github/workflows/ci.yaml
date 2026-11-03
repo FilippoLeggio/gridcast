@@ -1,0 +1,63 @@
+# Quality gates for every pull request and every push to main.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to the same branch cancels the run that is now outdated.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: these jobs only read the repository.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+      - name: Run pre-commit hooks
+        run: uvx pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    # A throwaway Postgres, alive only for this job.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: gridcast
+          POSTGRES_PASSWORD: gridcast
+          POSTGRES_DB: gridcast
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gridcast"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      GRIDCAST_DATABASE_URL: postgresql+psycopg://gridcast:gridcast@localhost:5432/gridcast  # gitleaks:allow
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install dependencies from the lockfile
+        run: uv sync --all-extras --locked
+      - name: Run tests
+        run: uv run pytest
+      - name: Apply migrations to an empty database
+        run: uv run alembic upgrade head
+      - name: Check that table definitions match migrations
+        run: uv run alembic check
