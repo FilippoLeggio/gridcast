@@ -33,9 +33,9 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: ${POSTGRES_USER}
-          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-          POSTGRES_DB: ${POSTGRES_DB}
+          POSTGRES_USER: gridcast
+          POSTGRES_PASSWORD: gridcast
+          POSTGRES_DB: gridcast
         ports:
           - 5432:5432
         options: >-
