@@ -1,0 +1,47 @@
+# Creates the buckets once the S3 endpoint answers. Idempotent: existing buckets are kept.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-buckets
+  labels:
+    {{- include "mlflow.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: buckets
+          image: {{ .Values.images.mlflow }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          env:
+            {{- include "mlflow.s3Env" . | nindent 12 }}
+            - name: S3_ENDPOINT
+              value: http://seaweedfs:8333
+            - name: BUCKETS
+              value: {{ join "," .Values.s3.buckets | quote }}
+          command:
+            - python
+            - -c
+            - |
+              import os, time
+              import boto3
+              from botocore.exceptions import BotoCoreError, ClientError
+
+              s3 = boto3.client("s3", endpoint_url=os.environ["S3_ENDPOINT"])
+              for _ in range(30):
+                  try:
+                      existing = {b["Name"] for b in s3.list_buckets().get("Buckets", [])}
+                      break
+                  except (BotoCoreError, ClientError):
+                      time.sleep(2)
+              else:
+                  raise SystemExit("S3 endpoint not reachable")
+              for bucket in os.environ["BUCKETS"].split(","):
+                  if bucket not in existing:
+                      s3.create_bucket(Bucket=bucket)
+                      print(f"created {bucket}")
+              print("buckets ready")

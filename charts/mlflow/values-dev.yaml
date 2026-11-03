@@ -1,0 +1,3 @@
+images:
+  mlflow: gridcast-registry.localhost:5050/gridcast-mlflow:dev
+  pullPolicy: Always

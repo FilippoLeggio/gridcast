@@ -60,6 +60,9 @@ ENTRYPOINT ["gridcast-ingest"]
 CMD ["energy"]
 
 FROM base AS trainer
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build-trainer --chown=10001:10001 /app /app
 ARG GIT_COMMIT=unknown
 ENV GRIDCAST_GIT_COMMIT=${GIT_COMMIT}

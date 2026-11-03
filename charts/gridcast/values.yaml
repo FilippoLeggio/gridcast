@@ -61,3 +61,32 @@ cronJobs:
     suspend: true
     activeDeadlineSeconds: 3600
     args: ["backfill-weather", "--start", "2024-01-01", "--end", "2026-10-27"]
+    # Daily retraining, once yesterday's load is complete (published about 3 hours late).
+
+  train:
+    component: trainer
+    schedule: "20 5 * * *"
+    usesMlflow: true
+    activeDeadlineSeconds: 3600
+    args: ["train"]
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+  # Daily forecast of tomorrow, issued at 10:00 with the champion model.
+  predict:
+    component: trainer
+    schedule: "5 10 * * *"
+    usesMlflow: true
+    args: ["predict"]
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+# MLflow tracking server, installed by the separate mlflow chart.
+mlflow:
+  trackingUri: http://mlflow.mlflow.svc.cluster.local:5000

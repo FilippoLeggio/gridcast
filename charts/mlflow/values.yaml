@@ -1,0 +1,16 @@
+images:
+  mlflow: ghcr.io/filippoleggio/gridcast-mlflow:3.1.0
+  seaweedfs: chrislusf/seaweedfs:4.22
+  pullPolicy: IfNotPresent
+
+# Existing secret with keys access-key and secret-key, never created by this chart.
+s3:
+  credentialsSecret: seaweedfs-s3
+  buckets: ["mlflow", "backups"]
+
+storage:
+  size: 5Gi
+
+database:
+  image: ghcr.io/cloudnative-pg/postgresql:17
+  storageSize: 1Gi

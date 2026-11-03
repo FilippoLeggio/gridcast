@@ -38,6 +38,13 @@ spec:
                 {{- toYaml $job.args | nindent 16 }}
               env:
                 {{- include "gridcast.dbEnv" $ | nindent 16 }}
+                {{- if $job.usesMlflow }}
+                - name: MLFLOW_TRACKING_URI
+                  value: {{ $.Values.mlflow.trackingUri | quote }}
+                # MLflow and its libraries write small caches under HOME: use the writable /tmp.
+                - name: HOME
+                  value: /tmp
+                {{- end }}
               securityContext:
                 {{- include "gridcast.containerSecurityContext" $ | nindent 16 }}
               resources:

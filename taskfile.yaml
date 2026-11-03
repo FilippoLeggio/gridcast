@@ -152,3 +152,15 @@ tasks:
         --namespace gridcast --create-namespace
         -f charts/gridcast/values-dev.yaml
         --wait --timeout 5m
+  dev-redeploy:
+    desc: Redeploy the chart with the dev images after a code change
+    cmds:
+      - task images
+      - task images-push-local
+      - task chart-dev
+
+  mlflow-image-local:
+    desc: Build the MLflow server image and push it to the k3d registry
+    cmds:
+      - docker build -t localhost:5050/gridcast-mlflow:dev compose/mlflow
+      - docker push localhost:5050/gridcast-mlflow:dev
