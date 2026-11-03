@@ -652,7 +652,7 @@ wheels = [
 
 [[package]]
 name = "databricks-sdk"
-version = "0.159.0"
+version = "0.160.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -661,9 +661,9 @@ dependencies = [
     { name = "requests" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e0/0d/d778f17a51b1fefe10343411e1a7ba130a5ad9b52a3eb338d727218dcf90/databricks_sdk-0.159.0.tar.gz", hash = "sha256:dfc6c2d201783021c846dacd93a9b074bc6e5240e528f7e4224c2f2e1b19e369", size = 1203491, upload-time = "2026-11-02T04:24:48.007Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/67/1a/a2bb0cd95a5dc47701cd8844acc39c82ecd02d9311e1d1df08688044ca86/databricks_sdk-0.160.0.tar.gz", hash = "sha256:f63c65cdf0240f62a94667f6c6727f510f60df61cbb73fc7e5381b59b1474ae4", size = 1209795, upload-time = "2026-11-03T04:24:01.582Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/a9/54de1d628a90fa668069a1b62a16960949b382c770c9d9a66aea5e767144/databricks_sdk-0.159.0-py3-none-any.whl", hash = "sha256:1a244ccad5531ee1c8874eab38f1fdd31517991d73a76c302895d6e2c7ab9662", size = 1145148, upload-time = "2026-11-02T04:24:46.288Z" },
+    { url = "https://files.pythonhosted.org/packages/69/b2/dbd3795e09aa4ca7f0697acec9e5f9be06f55761305682641b9069c40fc5/databricks_sdk-0.160.0-py3-none-any.whl", hash = "sha256:c17f98be10f3a3f4624477d802018a187c72be3c7ef02ef041bb8c74ad611569", size = 1151379, upload-time = "2026-11-03T04:23:59.894Z" },
 ]
 
 [[package]]
@@ -905,15 +905,15 @@ wheels = [
 
 [[package]]
 name = "google-auth"
-version = "2.62.0"
+version = "2.62.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
     { name = "pyasn1-modules" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f5/b9/4b2528f30114b106e3c3a7298ba38d85e682fd1f83fe7c4a5b77c7677082/google_auth-2.62.0.tar.gz", hash = "sha256:0bef0ce54bdf9ce226c5d66e4264413bd918141c31bbe49fb52eac882f513d69", size = 398180, upload-time = "2026-10-12T19:20:48.328Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c4/38/d79ab09dcfc1e1638d887c8f65657619d3ebc454165c558ef79355971ce3/google_auth-2.62.1.tar.gz", hash = "sha256:3c8e1ce2553784ae17fd220e6f88df3281d86ab98019278f436d06dffab17a9e", size = 398519, upload-time = "2026-11-03T03:06:03.008Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/a3/87fe9b7203ec2e56ea6a57c75e6d632eaf9487c7f7978cdad1d801bee0af/google_auth-2.62.0-py3-none-any.whl", hash = "sha256:4ff4319aeb4ad128409759d397a9fcafad126d0031d241cc0dd6b9a00b43e3f3", size = 267911, upload-time = "2026-10-12T19:20:46.355Z" },
+    { url = "https://files.pythonhosted.org/packages/14/dd/2e11f0976ecb3ce48ef3f324837460e9ea50071fa4eb01f1e49df87d3cee/google_auth-2.62.1-py3-none-any.whl", hash = "sha256:015399a5abde39033c69404cc1c079e6d4c2de2993e164c9f4eac6e5376ad72b", size = 267975, upload-time = "2026-11-03T03:06:01.422Z" },
 ]
 
 [[package]]
@@ -960,8 +960,6 @@ dependencies = [
     { name = "alembic" },
     { name = "holidays" },
     { name = "httpx" },
-    { name = "lightgbm" },
-    { name = "mlflow" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "psycopg", extra = ["binary"] },
@@ -977,6 +975,10 @@ api = [
     { name = "fastapi" },
     { name = "uvicorn", extra = ["standard"] },
 ]
+trainer = [
+    { name = "lightgbm" },
+    { name = "mlflow" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -989,8 +991,8 @@ requires-dist = [
     { name = "fastapi", marker = "extra == 'api'", specifier = ">=0.162.0" },
     { name = "holidays", specifier = ">=0.107" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "lightgbm", specifier = ">=4.7.0" },
-    { name = "mlflow", specifier = ">=3.17.2" },
+    { name = "lightgbm", marker = "extra == 'trainer'", specifier = ">=4.7.0" },
+    { name = "mlflow", marker = "extra == 'trainer'", specifier = ">=3.17.2" },
     { name = "numpy", specifier = ">=2.5.4" },
     { name = "pandas", specifier = ">=3.1.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
@@ -1001,7 +1003,7 @@ requires-dist = [
     { name = "tzdata", specifier = ">=2026.6" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'api'", specifier = ">=0.54.0" },
 ]
-provides-extras = ["api"]
+provides-extras = ["api", "trainer"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.2.0" }]

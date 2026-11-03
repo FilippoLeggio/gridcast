@@ -1,0 +1,7 @@
+# Built on the host for the host: the image builds its own virtualenv.
+.venv
+**/__pycache__
+.pytest_cache
+.ruff_cache
+# Not needed at runtime.
+tests
