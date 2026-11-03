@@ -1,0 +1,16 @@
+# PostgreSQL cluster: the CloudNativePG operator creates pods, volumes, services and secrets.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Release.Name }}-db
+  labels:
+    {{- include "gridcast.labels" . | nindent 4 }}
+spec:
+  instances: {{ .Values.database.instances }}
+  imageName: {{ .Values.database.image }}
+  storage:
+    size: {{ .Values.database.storageSize }}
+  bootstrap:
+    initdb:
+      database: gridcast
+      owner: gridcast

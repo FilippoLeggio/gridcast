@@ -1,0 +1,11 @@
+# Images: ghcr.io/<owner>/gridcast-<component>:<tag>, the tag being a short commit SHA.
+image:
+  registry: ghcr.io/filippoleggio
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# PostgreSQL managed by the CloudNativePG operator.
+database:
+  instances: 1
+  image: ghcr.io/cloudnative-pg/postgresql:17
+  storageSize: 2Gi
