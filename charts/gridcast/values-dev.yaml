@@ -1,0 +1,5 @@
+# Local k3d cluster: images come from the k3d registry and are re-pulled on every rollout.
+image:
+  registry: gridcast-registry.localhost:5050
+  tag: dev
+  pullPolicy: Always

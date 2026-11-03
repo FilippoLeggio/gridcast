@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert
 
+from gridcast.common.signals import Terminated
 from gridcast.common.tables import energy_power, forecasts, ingest_runs, weather_hourly
 
 # Postgres accepts at most 65535 bind parameters per statement:
@@ -82,7 +83,8 @@ def track_run(engine: sa.Engine, source: str) -> Iterator[dict]:
     try:
         yield run
     except Exception as exc:
-        _finish_run(engine, run_id, status="failed", rows=run["rows"], error=str(exc)[:2000])
+        status = "interrupted" if isinstance(exc, (KeyboardInterrupt, Terminated)) else "failed"
+        _finish_run(engine, run_id, status=status, rows=run["rows"], error=str(exc)[:2000])
         raise
     _finish_run(engine, run_id, status="success", rows=run["rows"], error=None)
 

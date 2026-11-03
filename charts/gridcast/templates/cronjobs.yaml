@@ -1,0 +1,51 @@
+{{- range $name, $job := .Values.cronJobs }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $.Release.Name }}-{{ $name }}
+  labels:
+    {{- include "gridcast.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  schedule: {{ $job.schedule | quote }}
+  timeZone: Europe/Rome
+  suspend: {{ $job.suspend | default false }}
+  # Never two runs of the same job at once.
+  concurrencyPolicy: Forbid
+  # A run missed by more than 10 minutes is skipped, not started late.
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: {{ $job.activeDeadlineSeconds | default 1800 }}
+      template:
+        metadata:
+          labels:
+            {{- include "gridcast.labels" $ | nindent 12 }}
+            app.kubernetes.io/component: {{ $name }}
+        spec:
+          restartPolicy: Never
+          securityContext:
+            {{- include "gridcast.podSecurityContext" $ | nindent 12 }}
+          containers:
+            - name: {{ $name }}
+              image: {{ include "gridcast.image" (dict "root" $ "component" $job.component) }}
+              imagePullPolicy: {{ $.Values.image.pullPolicy }}
+              args:
+                {{- toYaml $job.args | nindent 16 }}
+              env:
+                {{- include "gridcast.dbEnv" $ | nindent 16 }}
+              securityContext:
+                {{- include "gridcast.containerSecurityContext" $ | nindent 16 }}
+              resources:
+                {{- toYaml ($job.resources | default $.Values.jobDefaults.resources) | nindent 16 }}
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+{{- end }}

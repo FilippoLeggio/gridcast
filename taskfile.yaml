@@ -137,3 +137,18 @@ tasks:
     cmds:
       - for: [ingest, trainer, api]
         cmd: docker build --target {{.ITEM}} --build-arg GIT_COMMIT={{.COMMIT}} -t gridcast-{{.ITEM}}:dev .
+
+  images-push-local:
+    desc: Push the dev images to the local k3d registry
+    cmds:
+      - for: [ingest, trainer, api]
+        cmd: docker tag gridcast-{{.ITEM}}:dev localhost:5050/gridcast-{{.ITEM}}:dev && docker push localhost:5050/gridcast-{{.ITEM}}:dev
+
+  chart-dev:
+    desc: Install or upgrade the chart on the local k3d cluster with the dev images
+    cmds:
+      - >-
+        helm upgrade --install gridcast charts/gridcast
+        --namespace gridcast --create-namespace
+        -f charts/gridcast/values-dev.yaml
+        --wait --timeout 5m

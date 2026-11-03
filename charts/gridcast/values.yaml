@@ -9,3 +9,55 @@ database:
   instances: 1
   image: ghcr.io/cloudnative-pg/postgresql:17
   storageSize: 2Gi
+
+api:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    # Memory limit only: a CPU limit would throttle request spikes for no benefit.
+    limits:
+      memory: 384Mi
+
+migrations:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+# Resources for scheduled jobs that do not set their own.
+jobDefaults:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+# Scheduled jobs. Times are in Italian local time (see timeZone in the template).
+# Minutes are staggered so that jobs do not all start together.
+cronJobs:
+  ingest-energy:
+    component: ingest
+    schedule: "7 * * * *"
+    args: ["energy", "--days", "3"]
+  ingest-weather:
+    component: ingest
+    schedule: "12 * * * *"
+    args: ["weather"]
+  # Templates only: suspended, started by hand with "kubectl create job --from=cronjob/...".
+  backfill-energy:
+    component: ingest
+    schedule: "0 0 1 1 *"
+    suspend: true
+    activeDeadlineSeconds: 3600
+    args: ["backfill-energy", "--start", "2024-01-01", "--end", "2026-11-02"]
+  backfill-weather:
+    component: ingest
+    schedule: "0 0 1 1 *"
+    suspend: true
+    activeDeadlineSeconds: 3600
+    args: ["backfill-weather", "--start", "2024-01-01", "--end", "2026-10-27"]
