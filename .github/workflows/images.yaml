@@ -1,0 +1,78 @@
+# Build and scan the three container images; publish them to GHCR on main.
+name: images
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dockerfile-lint:
+    name: Dockerfile lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Lint the Dockerfile with hadolint
+        run: docker run --rm -i hadolint/hadolint < app/Dockerfile
+
+  build:
+    name: Build ${{ matrix.component }}
+    needs: dockerfile-lint
+    runs-on: ubuntu-latest
+    # Only this job may write packages, and only to publish on main.
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [ingest, trainer, api]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Compute image name and tag
+        run: |
+          # GHCR requires lowercase names; the tag is the short commit SHA.
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "IMAGE=ghcr.io/${owner}/gridcast-${{ matrix.component }}" >> "$GITHUB_ENV"
+          echo "TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the image
+        uses: docker/build-push-action@v6
+        with:
+          context: app
+          target: ${{ matrix.component }}
+          build-args: GIT_COMMIT=${{ github.sha }}
+          tags: ${{ env.IMAGE }}:${{ env.TAG }}
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          load: true
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
+
+      - name: Scan for vulnerabilities with Trivy
+        run: >
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock
+          aquasec/trivy:0.76.1 image
+          --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress
+          "$IMAGE:$TAG"
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push the image
+        if: github.event_name == 'push'
+        run: docker push "$IMAGE:$TAG"

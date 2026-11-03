@@ -7,7 +7,9 @@ FROM ghcr.io/astral-sh/uv:0.13.6 AS uv
 
 # Runtime base shared by every image: Python, a non-root user, the virtualenv on PATH.
 FROM python:3.12-slim AS base
-RUN groupadd --system app && useradd --system --gid app --no-create-home app
+# Fixed numeric IDs: Kubernetes can verify runAsNonRoot only with a numeric user.
+RUN groupadd --system --gid 10001 app \
+    && useradd --system --uid 10001 --gid app --no-create-home app
 WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
@@ -48,27 +50,27 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Ingest also carries the migrations: a Kubernetes Job will run them with this image.
 FROM base AS ingest
-COPY --from=build-ingest --chown=app:app /app /app
-COPY --chown=app:app migrations ./migrations
-COPY --chown=app:app alembic.ini ./
+COPY --from=build-ingest --chown=10001:10001 /app /app
+COPY --chown=10001:10001 migrations ./migrations
+COPY --chown=10001:10001 alembic.ini ./
 ARG GIT_COMMIT=unknown
 ENV GRIDCAST_GIT_COMMIT=${GIT_COMMIT}
-USER app
+USER 10001:10001
 ENTRYPOINT ["gridcast-ingest"]
 CMD ["energy"]
 
 FROM base AS trainer
-COPY --from=build-trainer --chown=app:app /app /app
+COPY --from=build-trainer --chown=10001:10001 /app /app
 ARG GIT_COMMIT=unknown
 ENV GRIDCAST_GIT_COMMIT=${GIT_COMMIT}
-USER app
+USER 10001:10001
 ENTRYPOINT ["gridcast-train"]
 CMD ["train"]
 
 FROM base AS api
-COPY --from=build-api --chown=app:app /app /app
+COPY --from=build-api --chown=10001:10001 /app /app
 ARG GIT_COMMIT=unknown
 ENV GRIDCAST_GIT_COMMIT=${GIT_COMMIT}
-USER app
+USER 10001:10001
 EXPOSE 8000
 CMD ["uvicorn", "gridcast.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
