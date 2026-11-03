@@ -1,0 +1,8 @@
+apiVersion: v2
+name: gridcast
+description: Day-ahead forecasting of Italian electricity load.
+type: application
+# Version of the chart itself: bump it when templates or default values change.
+version: 0.1.0
+# Version of the application; images are tagged by commit SHA through values.
+appVersion: "0.1.0"

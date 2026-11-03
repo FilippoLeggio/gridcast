@@ -1,0 +1,42 @@
+# Database migrations, run with the ingest image (it carries alembic and the migrations).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrations
+  labels:
+    {{- include "gridcast.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrations
+  annotations:
+    # After the first install (the database exists by then) and before every upgrade.
+    helm.sh/hook: post-install,pre-upgrade
+    # Delete the previous run before a new one; the last run stays for its logs.
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  # Retries with growing delays while the database is still starting.
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        {{- include "gridcast.labels" . | nindent 8 }}
+        app.kubernetes.io/component: migrations
+    spec:
+      restartPolicy: Never
+      securityContext:
+        {{- include "gridcast.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: migrations
+          image: {{ include "gridcast.image" (dict "root" . "component" "ingest") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["alembic", "upgrade", "head"]
+          env:
+            {{- include "gridcast.dbEnv" . | nindent 12 }}
+          securityContext:
+            {{- include "gridcast.containerSecurityContext" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.migrations.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

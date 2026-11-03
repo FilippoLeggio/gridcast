@@ -10,6 +10,7 @@ import typer
 
 from gridcast.common.config import Settings
 from gridcast.common.db import create_db_engine, track_run, upsert_power, upsert_weather
+from gridcast.common.signals import raise_on_sigterm
 from gridcast.ingest.energy_charts import fetch_public_power
 from gridcast.ingest.open_meteo import LOCATIONS, WeatherPoint, fetch_archive, fetch_forecast
 
@@ -18,6 +19,12 @@ LOCAL_TZ = ZoneInfo("Europe/Rome")
 app = typer.Typer(help="GridCast data ingestion.", no_args_is_help=True)
 
 USER_AGENT = "gridcast/0.1 (portfolio project)"
+
+
+@app.callback()
+def main() -> None:
+    """GridCast data ingestion."""
+    raise_on_sigterm()
 
 
 def _http_client(base_url: str, settings: Settings) -> httpx.Client:

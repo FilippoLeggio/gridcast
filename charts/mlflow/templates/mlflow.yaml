@@ -1,0 +1,83 @@
+# Dedicated PostgreSQL for MLflow metadata: GridCast data and MLflow never share a database.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: mlflow-db
+  labels:
+    {{- include "mlflow.labels" . | nindent 4 }}
+spec:
+  instances: 1
+  imageName: {{ .Values.database.image }}
+  storage:
+    size: {{ .Values.database.storageSize }}
+  bootstrap:
+    initdb:
+      database: mlflow
+      owner: mlflow
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  labels:
+    {{- include "mlflow.labels" . | nindent 4 }}
+    app.kubernetes.io/name: mlflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mlflow
+  template:
+    metadata:
+      labels:
+        {{- include "mlflow.labels" . | nindent 8 }}
+        app.kubernetes.io/name: mlflow
+    spec:
+      containers:
+        - name: mlflow
+          image: {{ .Values.images.mlflow }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          command:
+            - mlflow
+            - server
+            - --host=0.0.0.0
+            - --port=5000
+            - --backend-store-uri=$(MLFLOW_DB_URI)
+            - --artifacts-destination=s3://mlflow
+          env:
+            - name: MLFLOW_DB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-db-app
+                  key: uri
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: http://seaweedfs:8333
+            {{- include "mlflow.s3Env" . | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+  labels:
+    {{- include "mlflow.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/name: mlflow
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http

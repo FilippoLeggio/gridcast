@@ -8,6 +8,7 @@ import typer
 
 from gridcast.common.config import Settings
 from gridcast.common.db import create_db_engine, track_run
+from gridcast.common.signals import raise_on_sigterm
 from gridcast.trainer.dataset import load_dataset
 from gridcast.trainer.predict import predict_day
 from gridcast.trainer.train import train_and_register
@@ -23,6 +24,7 @@ DateOption = Annotated[datetime, typer.Option(formats=["%Y-%m-%d"])]
 @app.callback()
 def main() -> None:
     """GridCast model training."""
+    raise_on_sigterm()
 
 
 @app.command()

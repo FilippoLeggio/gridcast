@@ -60,6 +60,13 @@ ENTRYPOINT ["gridcast-ingest"]
 CMD ["energy"]
 
 FROM base AS trainer
+# LightGBM needs the OpenMP runtime, which the slim base image does not include.
+# Debian package versions are not pinned: old versions disappear from the archive when
+# security updates land, which would break the build. The base image tag and Trivy cover this.
+# hadolint ignore=DL3008
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build-trainer --chown=10001:10001 /app /app
 ARG GIT_COMMIT=unknown
 ENV GRIDCAST_GIT_COMMIT=${GIT_COMMIT}
