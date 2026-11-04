@@ -19,9 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Lint the Dockerfile with hadolint
-        run: docker run --rm -i hadolint/hadolint < app/Dockerfile
-
+      - name: Lint the Dockerfiles with hadolint
+        run: |
+          docker run --rm -i hadolint/hadolint < app/Dockerfile
+          docker run --rm -i hadolint/hadolint < compose/mlflow/Dockerfile
   build:
     name: Build ${{ matrix.component }}
     needs: dockerfile-lint
@@ -33,7 +34,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        component: [ingest, trainer, api]
+        include:
+          - component: ingest
+            context: app
+            target: ingest
+            tag-prefix: ""
+          - component: trainer
+            context: app
+            target: trainer
+            tag-prefix: ""
+          - component: api
+            context: app
+            target: api
+            tag-prefix: ""
+          # Platform image: the tag also carries the MLflow version.
+          - component: mlflow
+            context: compose/mlflow
+            target: ""
+            tag-prefix: "3.18.0-"
     steps:
       - uses: actions/checkout@v5
 
@@ -42,15 +60,15 @@ jobs:
           # GHCR requires lowercase names; the tag is the short commit SHA.
           owner="${GITHUB_REPOSITORY_OWNER,,}"
           echo "IMAGE=ghcr.io/${owner}/gridcast-${{ matrix.component }}" >> "$GITHUB_ENV"
-          echo "TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          echo "TAG=${{ matrix.tag-prefix }}${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
       - uses: docker/setup-buildx-action@v3
 
       - name: Build the image
         uses: docker/build-push-action@v6
         with:
-          context: app
-          target: ${{ matrix.component }}
+          context: ${{ matrix.context }}
+          target: ${{ matrix.target }}
           build-args: GIT_COMMIT=${{ github.sha }}
           tags: ${{ env.IMAGE }}:${{ env.TAG }}
           labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}

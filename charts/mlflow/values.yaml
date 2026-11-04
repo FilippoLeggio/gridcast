@@ -14,3 +14,7 @@ storage:
 database:
   image: ghcr.io/cloudnative-pg/postgresql:17
   storageSize: 1Gi
+
+server:
+  # Host headers accepted by MLflow (3.5+ rejects unknown hosts): in-cluster names and port-forwards.
+  allowedHosts: "mlflow:5000,mlflow.mlflow:5000,mlflow.mlflow.svc.cluster.local:5000,localhost:*"

@@ -7,6 +7,8 @@ metadata:
   labels:
     {{- include "gridcast.labels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ $name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   schedule: {{ $job.schedule | quote }}
   timeZone: Europe/Rome
