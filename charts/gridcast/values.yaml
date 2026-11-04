@@ -41,6 +41,7 @@ networkPolicy:
   operatorNamespace: cnpg-system
 
 migrations:
+  hookMode: helm
   resources:
     requests:
       cpu: 50m

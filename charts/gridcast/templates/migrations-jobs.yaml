@@ -7,10 +7,16 @@ metadata:
     {{- include "gridcast.labels" . | nindent 4 }}
     app.kubernetes.io/component: migrations
   annotations:
-    # After the first install (the database exists by then) and before every upgrade.
+    {{- if eq .Values.migrations.hookMode "argocd" }}
+    # Argo CD: run during each sync, after the database (wave 0), before the workloads (wave 2).
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    {{- else }}
+    # Plain Helm: after the first install (the database exists by then) and before every upgrade.
     helm.sh/hook: post-install,pre-upgrade
-    # Delete the previous run before a new one; the last run stays for its logs.
     helm.sh/hook-delete-policy: before-hook-creation
+    {{- end }}
 spec:
   # Retries with growing delays while the database is still starting.
   backoffLimit: 6
