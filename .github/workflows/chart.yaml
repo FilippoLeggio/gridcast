@@ -1,0 +1,51 @@
+# Validate the Helm charts: lint, schema validation of the rendered manifests, safety checks.
+name: chart
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: chart-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  chart:
+    name: Chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: 4.3.1+gc0d08d0
+
+      - name: Lint the charts
+        run: |
+          helm lint charts/gridcast --set image.tag=ci
+          helm lint charts/gridcast -f charts/gridcast/values-dev.yaml
+          helm lint charts/mlflow -f charts/mlflow/values-dev.yaml
+
+      - name: Validate the rendered manifests against Kubernetes schemas
+        run: |
+          validate() {
+            docker run --rm -i ghcr.io/yannh/kubeconform:0.8.0 \
+              -strict -summary \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+          }
+          helm template test charts/gridcast --set image.tag=ci | validate
+          helm template test charts/gridcast -f charts/gridcast/values-dev.yaml | validate
+          helm template test charts/mlflow | validate
+
+      - name: Refuse to render without an image tag
+        run: |
+          if helm template test charts/gridcast > /dev/null 2>&1; then
+            echo "The chart rendered without image.tag: the required check is missing"
+            exit 1
+          fi
+          echo "OK: the chart refuses to render without image.tag"
