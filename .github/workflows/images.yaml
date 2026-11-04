@@ -15,14 +15,14 @@ permissions:
 
 jobs:
   dockerfile-lint:
-    name: Lint the Dockerfiles with hadolint
+    name: Dockerfile lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Lint the Dockerfile with hadolint
-        run: docker run --rm -i hadolint/hadolint < app/Dockerfile
-             docker run --rm -i hadolint/hadolint < compose/mlflow/Dockerfile
-
+      - name: Lint the Dockerfiles with hadolint
+        run: |
+          docker run --rm -i hadolint/hadolint < app/Dockerfile
+          docker run --rm -i hadolint/hadolint < compose/mlflow/Dockerfile
   build:
     name: Build ${{ matrix.component }}
     needs: dockerfile-lint
