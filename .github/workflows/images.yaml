@@ -2,9 +2,14 @@
 name: images
 
 on:
+  # Pull requests always build and scan: these checks are required by the ruleset.
   pull_request:
+  # On main, publish (and promote) only when the image contents change.
   push:
     branches: [main]
+    paths:
+      - app/**
+      - .github/workflows/images.yaml
 
 concurrency:
   group: images-${{ github.ref }}
@@ -88,3 +93,46 @@ jobs:
       - name: Push the image
         if: github.event_name == 'push'
         run: docker push "$IMAGE:$TAG"
+
+  promote-dev:
+    name: Promote to dev
+    # Only after all images are built, scanned and pushed from main.
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    # One promotion at a time: queued, never cancelled, so no release is lost.
+    concurrency:
+      group: promote-dev
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+    steps:
+      - name: Check out the GitOps repository
+        uses: actions/checkout@v5
+        with:
+          repository: FilippoLeggio/gridcast-gitops
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: gitops
+
+      - name: Open and merge the promotion pull request
+        working-directory: gitops
+        run: |
+          tag="${GITHUB_SHA::7}"
+          yq -i ".image.tag = \"${tag}\"" apps/gridcast/dev/values.yaml
+          if git diff --quiet; then
+            echo "dev already runs ${tag}: nothing to promote"
+            exit 0
+          fi
+
+          branch="promote/dev-${tag}"
+          git config user.name "gridcast-ci"
+          git config user.email "gridcast-ci@users.noreply.github.com"
+          git switch -c "${branch}"
+          git commit -am "deploy(dev): gridcast ${tag}" \
+            -m "Source: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}"
+          git push -u origin "${branch}"
+
+          gh pr create --base main --head "${branch}" \
+            --title "deploy(dev): gridcast ${tag}" \
+            --body "Automated promotion of ${GITHUB_REPOSITORY}@${GITHUB_SHA} to dev."
+          gh pr merge "${branch}" --squash --delete-branch
