@@ -51,7 +51,7 @@ jobs:
           - component: mlflow
             context: compose/mlflow
             target: ""
-            tag-prefix: "3.1.0-"
+            tag-prefix: "3.18.0-"
     steps:
       - uses: actions/checkout@v5
 

@@ -44,6 +44,7 @@ spec:
             - --port=5000
             - --backend-store-uri=$(MLFLOW_DB_URI)
             - --artifacts-destination=s3://mlflow
+            - --allowed-hosts={{ .Values.server.allowedHosts }}
           env:
             - name: MLFLOW_DB_URI
               valueFrom:
