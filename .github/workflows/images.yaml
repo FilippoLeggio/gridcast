@@ -22,7 +22,6 @@ jobs:
       - name: Lint the Dockerfiles with hadolint
         run: |
           docker run --rm -i hadolint/hadolint < app/Dockerfile
-          docker run --rm -i hadolint/hadolint < compose/mlflow/Dockerfile
   build:
     name: Build ${{ matrix.component }}
     needs: dockerfile-lint
@@ -47,11 +46,6 @@ jobs:
             context: app
             target: api
             tag-prefix: ""
-          # Platform image: the tag also carries the MLflow version.
-          - component: mlflow
-            context: compose/mlflow
-            target: ""
-            tag-prefix: "3.18.0-"
     steps:
       - uses: actions/checkout@v5
 

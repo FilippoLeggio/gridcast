@@ -19,3 +19,10 @@ server:
   # Host headers accepted by MLflow (3.5+ rejects unknown hosts): in-cluster names,
   # port-forwards, and pod IPs used by the kubelet for health probes.
   allowedHosts: "mlflow:5000,mlflow.mlflow:5000,mlflow.mlflow.svc.cluster.local:5000,localhost:*,10.*"
+  workers: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 768Mi
+    limits:
+      memory: 2Gi
