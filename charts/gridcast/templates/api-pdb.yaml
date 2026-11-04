@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    {{- include "gridcast.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  # At most one API pod down at a time during voluntary disruptions (node drains, upgrades).
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: api

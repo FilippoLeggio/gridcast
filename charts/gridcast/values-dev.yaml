@@ -3,3 +3,9 @@ image:
   registry: gridcast-registry.localhost:5050
   tag: dev
   pullPolicy: Always
+
+api:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3

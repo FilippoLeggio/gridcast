@@ -19,6 +19,26 @@ api:
     # Memory limit only: a CPU limit would throttle request spikes for no benefit.
     limits:
       memory: 384Mi
+      # Public HTTP route through the platform Gateway.
+  route:
+    enabled: true
+    hostname: gridcast.localhost
+    gateway:
+      name: traefik-gateway
+      namespace: traefik
+
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilization: 70
+
+networkPolicy:
+  enabled: true
+  # Namespace of the Gateway controller allowed to reach the API.
+  gatewayNamespace: traefik
+  # Namespace of the CloudNativePG operator, which manages the database pods.
+  operatorNamespace: cnpg-system
 
 migrations:
   resources:
