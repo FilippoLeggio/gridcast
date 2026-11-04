@@ -47,6 +47,8 @@ spec:
             - --allowed-hosts={{ .Values.server.allowedHosts }}
             - --workers={{ .Values.server.workers }}
           env:
+            - name: MLFLOW_SERVER_ENABLE_JOB_EXECUTION
+              value: "false"
             - name: MLFLOW_DB_URI
               valueFrom:
                 secretKeyRef:
