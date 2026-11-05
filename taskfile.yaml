@@ -164,3 +164,28 @@ tasks:
     cmds:
       - docker build -t localhost:5050/gridcast-mlflow:dev compose/mlflow
       - docker push localhost:5050/gridcast-mlflow:dev
+
+  dev-stop:
+    desc: Stop the local cluster, keeping all its data
+    cmds:
+      - k3d cluster stop {{.CLUSTER}}
+
+  dev-start:
+    desc: Start the local cluster again
+    cmds:
+      - k3d cluster start {{.CLUSTER}}
+
+  bootstrap-local:
+    desc: Bootstrap the local cluster with Argo CD and the backed-up Sealed Secrets keys
+    dir: infra/terraform/envs/local
+    cmds:
+      - terraform init -input=false
+      - >-
+        TF_VAR_sealed_secrets_keys_yaml="$(age -d ~/sealed-secrets-dev-key.yaml.age)"
+        terraform apply
+
+  argocd-ui:
+    desc: Print the Argo CD admin password and open a port-forward to the UI
+    cmds:
+      - kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo
+      - kubectl port-forward svc/argocd-server -n argocd 8443:443
