@@ -164,3 +164,13 @@ tasks:
     cmds:
       - docker build -t localhost:5050/gridcast-mlflow:dev compose/mlflow
       - docker push localhost:5050/gridcast-mlflow:dev
+
+  dev-stop:
+    desc: Stop the local cluster, keeping all its data
+    cmds:
+      - k3d cluster stop {{.CLUSTER}}
+
+  dev-start:
+    desc: Start the local cluster again
+    cmds:
+      - k3d cluster start {{.CLUSTER}}
