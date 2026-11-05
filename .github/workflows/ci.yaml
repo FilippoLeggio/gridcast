@@ -21,6 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # The terraform_fmt hook needs the terraform binary.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.17.1
+          terraform_wrapper: false
       - uses: astral-sh/setup-uv@v6
       - name: Run pre-commit hooks
         run: uvx pre-commit run --all-files --show-diff-on-failure
