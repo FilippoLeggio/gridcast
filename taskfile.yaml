@@ -175,6 +175,7 @@ tasks:
     cmds:
       - k3d cluster start {{.CLUSTER}}
 
+
   bootstrap-local:
     desc: Bootstrap the local cluster with Argo CD and the backed-up Sealed Secrets keys
     dir: infra/terraform/envs/local
