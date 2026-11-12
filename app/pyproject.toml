@@ -28,6 +28,7 @@ gridcast-train = "gridcast.trainer.cli:app"
 [project.optional-dependencies]
 api = [
     "fastapi>=0.162.0",
+    "prometheus-client>=0.26.0",
     "uvicorn[standard]>=0.54.0",
 ]
 trainer = [
