@@ -1,14 +1,18 @@
 """HTTP API: serves stored forecasts and their accuracy against actual load."""
 
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta
 from typing import Annotated
 
 import sqlalchemy as sa
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
+from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
 from pydantic import BaseModel
+from starlette.routing import Match
 
+from gridcast.api.metrics import REQUEST_DURATION, DatabaseCollector
 from gridcast.common.config import Settings
 from gridcast.common.db import create_db_engine
 from gridcast.common.tables import forecasts
@@ -46,11 +50,48 @@ class AccuracyResponse(BaseModel):
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # One connection pool for the whole process, created at startup, closed at shutdown.
     app.state.engine = create_db_engine(Settings().database_url)
-    yield
-    app.state.engine.dispose()
+    # Data and forecast health, read from the database at every Prometheus scrape.
+    collector = DatabaseCollector(app.state.engine)
+    REGISTRY.register(collector)
+    try:
+        yield
+    finally:
+        # Unregister so that a new app instance (tests, reloads) can register its own.
+        REGISTRY.unregister(collector)
+        app.state.engine.dispose()
 
 
 app = FastAPI(title="GridCast API", version="0.1.0", lifespan=lifespan)
+
+
+def _route_template(request: Request) -> str:
+    """The route pattern (e.g. /forecast), never the raw path, to keep label cardinality bounded."""
+    for route in request.app.router.routes:
+        match, _ = route.matches(request.scope)
+        if match == Match.FULL:
+            return route.path
+    return "unmatched"
+
+
+@app.middleware("http")
+async def observe_requests(request: Request, call_next):
+    start = time.perf_counter()
+    status = 500  # recorded if the handler raises
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        return response
+    finally:
+        REQUEST_DURATION.labels(request.method, _route_template(request), str(status)).observe(
+            time.perf_counter() - start
+        )
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics() -> Response:
+    # A plain def runs in a worker thread: the collector's database queries
+    #  never block the event loop.
+    return Response(generate_latest(REGISTRY), media_type=CONTENT_TYPE_LATEST)
 
 
 def get_engine(request: Request) -> sa.Engine:
