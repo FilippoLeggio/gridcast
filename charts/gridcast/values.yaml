@@ -111,3 +111,10 @@ cronJobs:
 # MLflow tracking server, installed by the separate mlflow chart.
 mlflow:
   trackingUri: http://mlflow.mlflow.svc.cluster.local:5000
+
+metrics:
+  prometheusNamespace: monitoring
+  serviceMonitor:
+    # Off by default: the ServiceMonitor CRD exists only where the Prometheus Operator runs.
+    enabled: false
+    interval: 30s
