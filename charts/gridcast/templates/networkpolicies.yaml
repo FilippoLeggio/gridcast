@@ -56,3 +56,32 @@ spec:
         - port: 8000
         - port: 5432
 {{- end }}
+
+
+{{- if .Values.metrics.serviceMonitor.enabled }}
+---
+# Prometheus, in the monitoring namespace, may reach the API port to scrape /metrics.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-from-prometheus
+  labels:
+    {{- include "gridcast.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gridcast
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: api
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.metrics.prometheusNamespace }}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - port: http
+{{- end }}
