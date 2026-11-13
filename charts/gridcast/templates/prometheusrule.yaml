@@ -1,0 +1,65 @@
+{{- if .Values.metrics.serviceMonitor.enabled }}
+# Alerts on symptoms users would notice: stale data, missing forecasts, a model worse than the baseline.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}-alerts
+  labels:
+    {{- include "gridcast.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: gridcast.data
+      rules:
+        - alert: GridcastDataStale
+          # Energy-Charts publishes with a delay of 1-2 hours; 4 hours means the ingest is stuck.
+          expr: gridcast_data_freshness_seconds > 4 * 3600
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Latest actual load is {{`{{ $value | humanizeDuration }}`}} old"
+            description: "The hourly ingest is not bringing new load data. Check ingest_runs and the ingest-energy jobs."
+
+        - alert: GridcastMetricsDatabaseDown
+          expr: gridcast_metrics_db_up == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "The API cannot query the database"
+            description: "Data and forecast metrics are missing. Check the CloudNativePG cluster and the API logs."
+
+    - name: gridcast.forecast
+      rules:
+        - alert: GridcastForecastMissing
+          # predict runs at 10:05 Italian time; hour() is in UTC, so >= 10 means after 11:00 or 12:00 in Italy.
+          expr: gridcast_forecast_missing_hours_tomorrow > 0 and on() hour() >= 10
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{`{{ $value }}`}} hours of tomorrow have no forecast"
+            description: "The daily predict job did not write tomorrow's forecast. Check the predict job and the champion model in MLflow."
+
+        - alert: GridcastModelWorseThanBaseline
+          expr: |
+            gridcast_mape_7d_percent{forecaster="model"}
+              > ignoring(forecaster) gridcast_mape_7d_percent{forecaster="baseline"}
+          for: 6h
+          labels:
+            severity: warning
+          annotations:
+            summary: "7-day MAPE: model {{`{{ $value | printf \"%.1f\" }}`}}%, worse than the naive baseline"
+            description: "The champion no longer beats the seasonal baseline. Run train-analyze and consider a rollback of the champion alias."
+
+    - name: gridcast.api
+      rules:
+        - alert: GridcastApiDown
+          expr: up{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-api"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Prometheus cannot scrape the GridCast API"
+            description: "The API pods are down or unreachable from the monitoring namespace (network policy?)."
+{{- end }}
